@@ -1,14 +1,18 @@
+const webpack = require("webpack");
+const path = require('path');
+
 const copyWebpackPlugin = require('copy-webpack-plugin');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+const ExtractTextPlugin = require('extract-text-webpack-plugin');
 
-module.exports = {
+module.exports = [{
   entry: [
     'babel-polyfill',
     `./src/js/app.js`
   ],
 
   output: {
-    path: __dirname + '/dist',
+    path: path.join(__dirname, 'dist'),
     filename: 'app.bundle.js'
   },
 
@@ -34,13 +38,42 @@ module.exports = {
       compress: {
         warnings: false
       }
-    })
+    }),
+    new webpack.HotModuleReplacementPlugin()
   ],
 
   // Configuration for dev server
   devServer: {
     contentBase: __dirname + '/dist',
-    port: 9000
+    port: 9000,
+    hot: true
   }
 
-};
+}, {
+  entry: {
+    style: './src/style/main.js'
+  },
+
+  output: {
+    path: path.join(__dirname, 'dist'),
+    filename: '[name].css'
+  },
+
+  module: {
+    loaders: [
+      {
+        test: /\.css$/,
+        loader: ExtractTextPlugin.extract({ fallback: 'style-loader', use: 'css-loader' })
+      },
+      {
+        test: /\.scss$/,
+        loader: ExtractTextPlugin.extract({ fallback: 'style-loader', use: 'css-loader' })
+      }
+    ]
+  },
+
+  plugins: [
+    new ExtractTextPlugin("[name].css")
+  ],
+
+}];

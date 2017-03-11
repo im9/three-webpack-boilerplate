@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "server": "webpack-dev-server",
+    "server": "webpack-dev-server --open",
     "build": "webpack -w",
     "start": "concurrently \"npm run server\" \"npm run build\""
   },
@@ -22,10 +22,20 @@
     "babel-register": "^6.23.0",
     "concurrently": "^3.4.0",
     "copy-webpack-plugin": "^4.0.1",
+    "css-loader": "^0.27.1",
+    "extract-text-webpack-plugin": "^2.1.0",
     "node-sass": "^4.5.0",
+    "sass-loader": "^6.0.3",
+    "style-loader": "^0.13.2",
     "three": "^0.84.0",
     "uglifyjs-webpack-plugin": "^0.3.0",
     "webpack": "^2.2.1",
     "webpack-dev-server": "^2.4.1"
+  },
+  "dependencies": {
+    "css-loader": "^0.27.1",
+    "extract-text-webpack-plugin": "^2.1.0",
+    "sass-loader": "^6.0.3",
+    "style-loader": "^0.13.2"
   }
 }
