@@ -1,73 +1,115 @@
 import 'babel-polyfill'
 import * as THREE from 'three'
+import Stats from 'stats-js'
+import dat from 'dat-gui'
 
 const init = () => {
-  // create a scene, that will hold all our elements such as objects, cameras and lights.
-  const scene = new THREE.Scene();
+    const stats = initStats();
 
-  // create a camera, which defines where we're looking at.
-  const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    // create a scene, that will hold all our elements such as objects, cameras and lights.
+    const scene = new THREE.Scene();
 
-  // create a render and set the size
-  const renderer = new THREE.WebGLRenderer();
-  renderer.setClearColor(new THREE.Color(0xEEEEEE));
-  renderer.setSize(window.innerWidth, window.innerHeight);
+    // create a camera, which defines where we're looking at.
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-  // show axes in the screen
-  const axes = new THREE.AxisHelper(20);
-  scene.add(axes);
+    // create a render and set the size
+    const webGLRenderer = new THREE.WebGLRenderer();
+    webGLRenderer.setClearColor(new THREE.Color(0xEEEEEE));
+    webGLRenderer.setSize(window.innerWidth, window.innerHeight);
+    webGLRenderer.shadowMap.enabled = true;
 
-  // create the ground plane
-  const planeGeometry = new THREE.PlaneGeometry(60, 20);
-  const planeMaterial = new THREE.MeshBasicMaterial({color: 0xcccccc});
-  const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    let cube = createMesh(new THREE.BoxGeometry(10, 10, 10, 1, 1, 1));
+    // add the sphere to the scene
+    scene.add(cube);
 
-  // rotate and position the plane
-  plane.rotation.x = -0.5 * Math.PI;
-  plane.position.x = 15;
-  plane.position.y = 0;
-  plane.position.z = 0;
+    // position and point the camera to the center of the scene
+    camera.position.x = -20;
+    camera.position.y = 30;
+    camera.position.z = 40;
+    camera.lookAt(new THREE.Vector3(10, 0, 0));
 
-  // add the plane to the scene
-  scene.add(plane);
 
-  // create a cube
-  const cubeGeometry = new THREE.BoxGeometry(4, 4, 4);
-  const cubeMaterial = new THREE.MeshBasicMaterial({color: 0xff0000, wireframe: true});
-  const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+    // add spotlight for the shadows
+    const spotLight = new THREE.SpotLight(0xffffff);
+    spotLight.position.set(-40, 60, -10);
+    scene.add(spotLight);
 
-  // position the cube
-  cube.position.x = -4;
-  cube.position.y = 3;
-  cube.position.z = 0;
+    // add the output of the renderer to the html element
+    document.getElementById("WebGL-output").appendChild(webGLRenderer.domElement);
 
-  // add the cube to the scene
-  scene.add(cube);
+    // call the render function
+    let step = 0;
 
-  // create a sphere
-  const sphereGeometry = new THREE.SphereGeometry(4, 20, 20);
-  const sphereMaterial = new THREE.MeshBasicMaterial({color: 0x7777ff, wireframe: true});
-  const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
 
-  // position the sphere
-  sphere.position.x = 20;
-  sphere.position.y = 4;
-  sphere.position.z = 2;
+    // setup the control gui
+    let controls = new function() {
 
-  // add the sphere to the scene
-  scene.add(sphere);
+        this.width = cube.children[0].geometry.parameters.width;
+        this.height = cube.children[0].geometry.parameters.height;
+        this.depth = cube.children[0].geometry.parameters.depth;
 
-  // position and point the camera to the center of the scene
-  camera.position.x = -30;
-  camera.position.y = 40;
-  camera.position.z = 30;
-  camera.lookAt(scene.position);
+        this.widthSegments = cube.children[0].geometry.parameters.widthSegments;
+        this.heightSegments = cube.children[0].geometry.parameters.heightSegments;
+        this.depthSegments = cube.children[0].geometry.parameters.depthSegments;
 
-  // add the output of the renderer to the html element
-  document.getElementById("WebGL-output").appendChild(renderer.domElement);
 
-  // render the scene
-  renderer.render(scene, camera);
+        this.redraw = function() {
+            // remove the old plane
+            scene.remove(cube);
+            // create a new one
+            cube = createMesh(new THREE.BoxGeometry(controls.width, controls.height, controls.depth, Math.round(controls.widthSegments), Math.round(controls.heightSegments), Math.round(controls.depthSegments)));
+            // add it to the scene.
+            scene.add(cube);
+        };
+    };
+
+    const gui = new dat.GUI();
+    gui.add(controls, 'width', 0, 40).onChange(controls.redraw);
+    gui.add(controls, 'height', 0, 40).onChange(controls.redraw);
+    gui.add(controls, 'depth', 0, 40).onChange(controls.redraw);
+    gui.add(controls, 'widthSegments', 0, 10).onChange(controls.redraw);
+    gui.add(controls, 'heightSegments', 0, 10).onChange(controls.redraw);
+    gui.add(controls, 'depthSegments', 0, 10).onChange(controls.redraw);
+    render();
+
+    function createMesh(geom) {
+
+        // assign two materials
+        let meshMaterial = new THREE.MeshNormalMaterial();
+        meshMaterial.side = THREE.DoubleSide;
+        let wireFrameMat = new THREE.MeshBasicMaterial();
+        wireFrameMat.wireframe = true;
+
+        // create a multimaterial
+        let mesh = THREE.SceneUtils.createMultiMaterialObject(geom, [meshMaterial, wireFrameMat]);
+
+        return mesh;
+    }
+
+    function render() {
+        stats.update();
+
+        cube.rotation.y = step += 0.01;
+
+        // render using requestAnimationFrame
+        requestAnimationFrame(render);
+        webGLRenderer.render(scene, camera);
+    }
+
+    function initStats() {
+
+        let stats = new Stats();
+        stats.setMode(0); // 0: fps, 1: ms
+
+        // Align top-left
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.left = '0px';
+        stats.domElement.style.top = '0px';
+
+        document.getElementById("Stats-output").appendChild(stats.domElement);
+
+        return stats;
+    }
 }
 
 window.onload = init;

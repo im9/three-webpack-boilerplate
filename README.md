@@ -2,7 +2,7 @@
 
 ## Overview
 
-Simple three.js Application using es 6 and webpack.
+Simple three.js Application using ES6 and webpack.
 
 ## Usage
 npm start
